@@ -20,7 +20,7 @@ header p { font-size: 0.8rem; color: #a0a0b0; margin-top: 0.3rem; }
 .panel.active { display: block; }
 .total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; font-size: 0.85rem; color: #555; }
 .total-num { font-size: 1.4rem; font-weight: bold; }
-.ok { color: #16a34a; } .over { color: #dc2626; } .under { color: #d97706; }
+.ok { color: #16a34a; } .under { color: #d97706; }
 .progress-track { height: 6px; background: #e2e8f0; border-radius: 3px; margin-bottom: 1.4rem; }
 .progress-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
 .etf-card { background: white; border-radius: 8px; padding: 1rem 1.2rem; border: 1px solid #e2e8f0; margin-bottom: 0.8rem; }
@@ -31,6 +31,7 @@ header p { font-size: 0.8rem; color: #a0a0b0; margin-top: 0.3rem; }
 .dot { width: 8px; height: 8px; border-radius: 50%; }
 .etf-meta { display: flex; justify-content: space-between; font-size: 0.7rem; color: #aaa; margin-top: 4px; }
 input[type=range] { width: 100%; cursor: pointer; margin: 4px 0; }
+input[type=range]:disabled { opacity: 0.3; cursor: not-allowed; }
 .btn-reset { margin-top: 1rem; background: none; border: 1px solid #ccc; border-radius: 6px; padding: 0.5rem 1.2rem; cursor: pointer; color: #666; font-size: 0.85rem; font-family: Georgia, serif; }
 .empty { text-align: center; padding: 3rem; color: #999; font-size: 0.95rem; }
 .sem { border-radius: 8px; padding: 0.9rem 1.2rem; display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.2rem; font-size: 0.85rem; }
@@ -66,7 +67,7 @@ input[type=range] { width: 100%; cursor: pointer; margin: 4px 0; }
 </header>
 <div class="cappello">
   <strong>Come funziona.</strong> Usa i cursori per assegnare le percentuali agli ETF che vuoi includere.
-  Il totale deve raggiungere il 100%. Il grafico mostra la crescita simulata di €10.000 investiti a inizio 2019.
+  Il totale non può superare il 100% — ogni cursore si blocca automaticamente al massimo disponibile.
   <strong>Non è un consiglio di investimento</strong> — i rendimenti passati non garantiscono quelli futuri.
 </div>
 <div class="wrap">
@@ -118,9 +119,29 @@ function buildList(){
           <div class="risk-dots">${[1,2,3,4,5].map(i=>`<div class="dot" style="background:${i<=e.r?RC[e.r]:'#e2e8f0'}"></div>`).join('')}</div>
         </div>
       </div>
-      <input type="range" min="0" max="100" step="5" value="0" style="accent-color:${e.c}" oninput="upd('${e.t}',this.value)">
+      <input type="range" min="0" max="100" step="5" value="0" id="inp-${e.t}" style="accent-color:${e.c}" oninput="upd('${e.t}',this.value)">
       <div class="etf-meta"><span>0%</span><span>Vol: ${e.v}% · ${RL[e.r]}</span><span>100%</span></div>
     </div>`).join('');
+}
+
+function updateSliders(){
+  const tot=gTot();
+  const residuo=100-tot;
+  ETF.forEach(e=>{
+    const inp=document.getElementById('inp-'+e.t);
+    // Il massimo raggiungibile da questo cursore = valore attuale + residuo disponibile
+    // arrotondato al multiplo di 5 inferiore
+    const maxVal=Math.floor((A[e.t]+residuo)/5)*5;
+    inp.max=maxVal;
+    // Se il residuo è 0 e questo ETF vale 0, disabilita
+    if(residuo<=0 && A[e.t]===0){
+      inp.disabled=true;
+      inp.style.opacity='0.3';
+    } else {
+      inp.disabled=false;
+      inp.style.opacity='1';
+    }
+  });
 }
 
 function upd(t,val){
@@ -132,14 +153,29 @@ function upd(t,val){
   card.style.border=val>0?`2px solid ${e.c}`:'1px solid #e2e8f0';
   const tot=gTot();
   const el=document.getElementById('tot');
-  el.textContent=tot+'%'+(tot===100?' ✓':tot>100?` — supera di ${tot-100}%`:tot>0?` — mancano ${100-tot}%`:'');
-  el.className='total-num '+(tot===100?'ok':tot>100?'over':'under');
+  el.textContent=tot+'%'+(tot===100?' ✓':tot>0?` — mancano ${100-tot}%`:'');
+  el.className='total-num '+(tot===100?'ok':'under');
   const pf=document.getElementById('prog');
   pf.style.width=Math.min(tot,100)+'%';
-  pf.style.background=tot===100?'#16a34a':tot>100?'#dc2626':'#c9a84c';
+  pf.style.background=tot===100?'#16a34a':'#c9a84c';
+  updateSliders();
 }
 
-function resetAll(){ETF.forEach(e=>{A[e.t]=0;document.querySelector(`#card-${e.t} input`).value=0;upd(e.t,0);});}
+function resetAll(){
+  ETF.forEach(e=>{
+    A[e.t]=0;
+    const inp=document.getElementById('inp-'+e.t);
+    inp.value=0; inp.max=100;
+    inp.disabled=false; inp.style.opacity='1';
+    document.getElementById('pct-'+e.t).textContent='0%';
+    document.getElementById('pct-'+e.t).style.color='#ccc';
+    document.getElementById('card-'+e.t).style.border='1px solid #e2e8f0';
+  });
+  document.getElementById('tot').textContent='0%';
+  document.getElementById('tot').className='total-num under';
+  document.getElementById('prog').style.width='0%';
+  document.getElementById('prog').style.background='#c9a84c';
+}
 
 function showTab(n){
   document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['costruttore','analisi'][i]===n));
