@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Costruttore Portafoglio ETF — Filosofare sui Mercati</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.12.7/Recharts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, serif; background: #f8f7f3; color: #1a1a2e; }
+  input[type=range] { cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useMemo } = React;
+const { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid } = Recharts;
+
+const ETF_DATA = {
+  VWCE: {
+    name: "MSCI All World", label: "World All-Cap", ticker: "VWCE", risk: 3, color: "#2563eb",
+    annualReturns: { 2020: 5.7, 2021: 27.5, 2022: -13.0, 2023: 19.0, 2024: 24.7, 2025: 8.4 },
+    volatility: 15.0,
+    countries: { "USA": 61, "Giappone": 5, "UK": 3, "Francia": 3, "Canada": 3, "Emergenti": 12, "Altro": 13 },
+    description: "Esposizione totale al mercato azionario globale. Il cuore di ogni portafoglio passivo.",
+  },
+  CSPX: {
+    name: "S&P 500", label: "S&P 500 (USA)", ticker: "CSPX", risk: 3, color: "#1d4ed8",
+    annualReturns: { 2020: 7.0, 2021: 38.8, 2022: -12.8, 2023: 21.5, 2024: 27.4, 2025: 2.8 },
+    volatility: 18.7,
+    countries: { "USA": 100 },
+    description: "Le 500 maggiori società americane. Massima concentrazione USA, massima performance storica.",
+  },
+  XDEW: {
+    name: "S&P 500 Equal Weight", label: "S&P 500 Equal Weight", ticker: "XDEW", risk: 3, color: "#3b82f6",
+    annualReturns: { 2020: -4.9, 2021: 28.2, 2022: -11.2, 2023: 18.1, 2024: 13.9, 2025: 20.8 },
+    volatility: 15.5,
+    countries: { "USA": 100 },
+    description: "S&P 500 con peso uguale per ogni titolo. Riduce il dominio dei Magnificent Seven.",
+  },
+  CNDX: {
+    name: "Nasdaq 100", label: "Nasdaq 100", ticker: "CNDX", risk: 5, color: "#7c3aed",
+    annualReturns: { 2020: 48.4, 2021: 27.3, 2022: -32.6, 2023: 53.1, 2024: 27.1, 2025: 8.1 },
+    volatility: 31.3,
+    countries: { "USA": 96, "Altro": 4 },
+    description: "Le 100 maggiori società del Nasdaq, a predominanza tecnologica. Alta volatilità, alto potenziale.",
+  },
+  XUSE: {
+    name: "MSCI World ex-USA", label: "World ex-USA", ticker: "XUSE", risk: 3, color: "#0891b2",
+    annualReturns: { 2020: 1.8, 2021: 16.9, 2022: -10.4, 2023: 10.1, 2024: 12.3, 2025: 11.0 },
+    volatility: 9.8,
+    countries: { "Giappone": 16, "UK": 10, "Francia": 8, "Canada": 8, "Germania": 7, "Svizzera": 7, "Altro": 44 },
+    description: "Mercati sviluppati globali esclusi gli USA.",
+  },
+  VWCG: {
+    name: "FTSE Developed Europe", label: "Europa (VWCG)", ticker: "VWCG", risk: 3, color: "#0284c7",
+    annualReturns: { 2020: 1.8, 2021: 22.7, 2022: -12.0, 2023: 20.2, 2024: 9.8, 2025: 19.8 },
+    volatility: 13.5,
+    countries: { "UK": 23, "Francia": 15, "Svizzera": 14, "Germania": 12, "Olanda": 8, "Danimarca": 5, "Altro": 23 },
+    description: "Azionario europeo sviluppato. Vanguard FTSE Developed Europe UCITS ETF Acc.",
+  },
+  EXCH: {
+    name: "Emergenti ex-Cina", label: "Emergenti ex-Cina", ticker: "EXCH", risk: 4, color: "#d97706",
+    annualReturns: { 2020: 3.8, 2021: 11.5, 2022: -14.2, 2023: 15.7, 2024: 10.2, 2025: 19.2 },
+    volatility: 11.9,
+    countries: { "Taiwan": 27, "India": 23, "Corea": 15, "Brasile": 6, "Sud Africa": 5, "Altro": 24 },
+    description: "Mercati emergenti senza esposizione cinese. Cattura la crescita EM riducendo il rischio geopolitico.",
+  },
+  ICHN: {
+    name: "MSCI China", label: "Cina (ICHN)", ticker: "ICHN", risk: 5, color: "#dc2626",
+    annualReturns: { 2020: 19.6, 2021: -13.5, 2022: -14.7, 2023: -11.6, 2024: 29.4, 2025: 13.8 },
+    volatility: 19.4,
+    countries: { "Cina": 100 },
+    description: "Esposizione diretta al mercato cinese. Alta volatilità, rischio regolatorio significativo.",
+  },
+  WSML: {
+    name: "MSCI World Small Cap", label: "Small Cap Globali", ticker: "WSML", risk: 4, color: "#059669",
+    annualReturns: { 2020: 11.6, 2021: 22.1, 2022: -8.7, 2023: 17.1, 2024: 6.7, 2025: 5.9 },
+    volatility: 10.7,
+    countries: { "USA": 57, "Giappone": 12, "UK": 6, "Canada": 5, "Australia": 4, "Altro": 16 },
+    description: "Piccole capitalizzazioni mondiali. Premio small cap nel lungo periodo, maggiore oscillazione.",
+  },
+};
+
+const RISK_LABELS = ["", "Molto basso", "Basso", "Moderato", "Elevato", "Molto elevato"];
+const RISK_COLORS = ["", "#22c55e", "#84cc16", "#f59e0b", "#f97316", "#ef4444"];
+const YEARS = [2020, 2021, 2022, 2023, 2024, 2025];
+const COUNTRY_COLORS = ["#2563eb","#7c3aed","#0891b2","#d97706","#dc2626","#059669","#db2777","#6366f1","#0d9488","#92400e"];
+
+function RiskDot({ level }) {
+  return (
+    <div style={{ display: "flex", gap: 3, alignItems: "center" }}>
+      {[1,2,3,4,5].map(i => (
+        <div key={i} style={{
+          width: 8, height: 8, borderRadius: "50%",
+          background: i <= level ? RISK_COLORS[level] : "#e2e8f0"
+        }} />
+      ))}
+    </div>
+  );
+}
+
+function formatPct(v) {
+  return (v >= 0 ? "+" : "") + v.toFixed(1) + "%";
+}
+
+function App() {
+  const [allocations, setAllocations] = useState(
+    Object.fromEntries(Object.keys(ETF_DATA).map(k => [k, 0]))
+  );
+  const [activeTab, setActiveTab] = useState("costruttore");
+
+  const total = useMemo(() => Object.values(allocations).reduce((a,b) => a+b, 0), [allocations]);
+  const activeETFs = useMemo(() => Object.entries(allocations).filter(([,v]) => v > 0), [allocations]);
+
+  const portfolioReturns = useMemo(() => {
+    if (total === 0) return [];
+    return YEARS.map(year => {
+      let ret = 0;
+      activeETFs.forEach(([ticker, pct]) => { ret += (pct/total)*(ETF_DATA[ticker].annualReturns[year]||0); });
+      return { year: String(year), rendimento: parseFloat(ret.toFixed(2)) };
+    });
+  }, [activeETFs, total]);
+
+  const growthData = useMemo(() => {
+    if (total === 0) return [];
+    let val = 10000;
+    const data = [{ year: "2019", valore: 10000 }];
+    YEARS.forEach(year => {
+      let ret = 0;
+      activeETFs.forEach(([ticker, pct]) => { ret += (pct/total)*(ETF_DATA[ticker].annualReturns[year]||0); });
+      val = val * (1 + ret/100);
+      data.push({ year: String(year), valore: Math.round(val) });
+    });
+    return data;
+  }, [activeETFs, total]);
+
+  const avgVol = useMemo(() => {
+    if (total === 0) return 0;
+    return activeETFs.reduce((acc,[ticker,pct]) => acc+(pct/total)*ETF_DATA[ticker].volatility, 0);
+  }, [activeETFs, total]);
+
+  const avgRisk = useMemo(() => {
+    if (total === 0) return 0;
+    return Math.round(activeETFs.reduce((acc,[ticker,pct]) => acc+(pct/total)*ETF_DATA[ticker].risk, 0));
+  }, [activeETFs, total]);
+
+  const countryMap = useMemo(() => {
+    const map = {};
+    activeETFs.forEach(([ticker, pct]) => {
+      const w = pct/total;
+      Object.entries(ETF_DATA[ticker].countries).forEach(([country, share]) => {
+        map[country] = (map[country]||0) + w*share;
+      });
+    });
+    return Object.entries(map)
+      .map(([name,value]) => ({ name, value: parseFloat(value.toFixed(1)) }))
+      .sort((a,b) => b.value-a.value);
+  }, [activeETFs, total]);
+
+  const correlationWarning = useMemo(() => {
+    const usaHeavy = ["CSPX","XDEW","CNDX"];
+    const usaWeight = usaHeavy.reduce((acc,t) => acc+(allocations[t]||0), 0);
+    const usaShare = total > 0 ? usaWeight/total : 0;
+    if (usaShare > 0.7) return { level:"red", msg:"Oltre il 70% in azionario USA — correlazione molto elevata in caso di correzione americana." };
+    if (usaShare > 0.5) return { level:"orange", msg:"Oltre il 50% in azionario USA — buona diversificazione tematica, correlazione rimane alta." };
+    return { level:"green", msg:"Buona diversificazione geografica — riduce la correlazione tra gli ETF." };
+  }, [allocations, total]);
+
+  const handleSlider = (ticker, value) => setAllocations(prev => ({ ...prev, [ticker]: parseInt(value) }));
+  const resetAll = () => setAllocations(Object.fromEntries(Object.keys(ETF_DATA).map(k => [k,0])));
+
+  const pieData = activeETFs.map(([ticker,pct]) => ({
+    name: ETF_DATA[ticker].label,
+    value: parseFloat((pct/(total||1)*100).toFixed(1)),
+    color: ETF_DATA[ticker].color,
+  }));
+
+  const corrBg = { green:"#f0fdf4", orange:"#fff7ed", red:"#fef2f2" };
+  const corrBorder = { green:"#86efac", orange:"#fed7aa", red:"#fca5a5" };
+  const corrDot = { green:"#16a34a", orange:"#f97316", red:"#dc2626" };
+
+  return (
+    <div style={{ fontFamily:"Georgia,serif", background:"#f8f7f3", minHeight:"100vh", color:"#1a1a2e" }}>
+
+      {/* HEADER */}
+      <div style={{ background:"#1a1a2e", color:"#f8f7f3", padding:"1.8rem 1.5rem 1.4rem", borderBottom:"4px solid #c9a84c" }}>
+        <div style={{ maxWidth:860, margin:"0 auto" }}>
+          <div style={{ fontSize:"0.68rem", letterSpacing:"0.2em", textTransform:"uppercase", color:"#c9a84c", marginBottom:"0.3rem" }}>
+            Filosofare sui Mercati — Strumenti
+          </div>
+          <h1 style={{ fontSize:"1.5rem", fontWeight:"bold", margin:"0 0 0.3rem", lineHeight:1.2 }}>
+            Costruttore di Portafoglio Azionario ETF
+          </h1>
+          <p style={{ fontSize:"0.82rem", color:"#a0a0b0", margin:0 }}>
+            Solo ETF UCITS ad accumulazione · dati storici stimati sugli indici sottostanti
+          </p>
+        </div>
+      </div>
+
+      {/* CAPPELLO */}
+      <div style={{ background:"#e8f4f8", borderLeft:"5px solid #2e86ab", padding:"1rem 1.5rem", margin:"1.2rem auto", maxWidth:860, fontSize:"0.86rem", color:"#1a3a4a", lineHeight:1.7 }}>
+        <strong>Come funziona.</strong> Usa i cursori per assegnare le percentuali. Il totale deve raggiungere il 100%.
+        Il grafico mostra la crescita simulata di €10.000 investiti a inizio 2019, calcolata sui rendimenti annuali degli indici.
+        La volatilità è la deviazione standard storica annualizzata.{" "}
+        <strong>Non è un consiglio di investimento</strong> — i rendimenti passati non garantiscono quelli futuri.
+      </div>
+
+      <div style={{ maxWidth:860, margin:"0 auto", padding:"0 1rem 3rem" }}>
+
+        {/* TAB */}
+        <div style={{ display:"flex", gap:"0.5rem", marginBottom:"1.5rem", borderBottom:"2px solid #ddd" }}>
+          {["costruttore","analisi"].map(tab => (
+            <button key={tab} onClick={() => setActiveTab(tab)} style={{
+              padding:"0.6rem 1.2rem", border:"none", background:"none", cursor:"pointer",
+              fontFamily:"Georgia,serif", fontSize:"0.88rem",
+              borderBottom: activeTab===tab ? "3px solid #c9a84c" : "3px solid transparent",
+              color: activeTab===tab ? "#1a1a2e" : "#666",
+              fontWeight: activeTab===tab ? "bold" : "normal",
+              marginBottom:"-2px", transition:"all 0.2s"
+            }}>
+              {tab==="costruttore" ? "⚙️ Costruttore" : "📊 Analisi portafoglio"}
+            </button>
+          ))}
+        </div>
+
+        {/* ══ TAB COSTRUTTORE ══ */}
+        {activeTab === "costruttore" && (
+          <div>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"0.8rem" }}>
+              <span style={{ fontSize:"0.85rem", color:"#555" }}>Allocazione totale</span>
+              <span style={{ fontSize:"1.4rem", fontWeight:"bold",
+                color: total===100 ? "#16a34a" : total>100 ? "#dc2626" : "#d97706" }}>
+                {total}%
+                {total===100 && " ✓"}
+                {total>100 && " — supera il 100%"}
+                {total>0 && total<100 && ` — mancano ${100-total}%`}
+              </span>
+            </div>
+            <div style={{ height:6, background:"#e2e8f0", borderRadius:3, marginBottom:"1.5rem" }}>
+              <div style={{
+                height:"100%", borderRadius:3, transition:"width 0.3s, background 0.3s",
+                width:`${Math.min(total,100)}%`,
+                background: total===100 ? "#16a34a" : total>100 ? "#dc2626" : "#c9a84c"
+              }} />
+            </div>
+
+            <div style={{ display:"grid", gap:"0.8rem" }}>
+              {Object.entries(ETF_DATA).map(([ticker, etf]) => (
+                <div key={ticker} style={{
+                  background:"white", borderRadius:8, padding:"1rem 1.2rem",
+                  border: allocations[ticker]>0 ? `2px solid ${etf.color}` : "1px solid #e2e8f0",
+                  transition:"border 0.2s"
+                }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"0.5rem" }}>
+                    <div>
+                      <div style={{ display:"flex", alignItems:"center", gap:"0.5rem" }}>
+                        <span style={{ fontWeight:"bold", fontSize:"0.95rem", color:etf.color }}>{ticker}</span>
+                        <span style={{ fontSize:"0.85rem", color:"#333" }}>{etf.label}</span>
+                      </div>
+                      <div style={{ fontSize:"0.75rem", color:"#888", marginTop:2 }}>{etf.description}</div>
+                    </div>
+                    <div style={{ textAlign:"right", minWidth:80 }}>
+                      <div style={{ fontSize:"1.3rem", fontWeight:"bold", color: allocations[ticker]>0 ? etf.color : "#ccc" }}>
+                        {allocations[ticker]}%
+                      </div>
+                      <RiskDot level={etf.risk} />
+                    </div>
+                  </div>
+                  <input type="range" min={0} max={100} step={5}
+                    value={allocations[ticker]}
+                    onChange={e => handleSlider(ticker, e.target.value)}
+                    style={{ width:"100%", accentColor:etf.color }}
+                  />
+                  <div style={{ display:"flex", justifyContent:"space-between", fontSize:"0.7rem", color:"#aaa" }}>
+                    <span>0%</span>
+                    <span>Vol. storica: {etf.volatility}% · Rischio: {RISK_LABELS[etf.risk]}</span>
+                    <span>100%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button onClick={resetAll} style={{
+              marginTop:"1rem", background:"none", border:"1px solid #ccc", borderRadius:6,
+              padding:"0.5rem 1.2rem", cursor:"pointer", color:"#666", fontSize:"0.85rem", fontFamily:"Georgia,serif"
+            }}>↺ Azzera tutto</button>
+          </div>
+        )}
+
+        {/* ══ TAB ANALISI ══ */}
+        {activeTab === "analisi" && (
+          <div>
+            {total === 0 ? (
+              <div style={{ textAlign:"center", padding:"3rem", color:"#999", fontSize:"0.95rem" }}>
+                Nessun ETF selezionato. Torna al costruttore e assegna le percentuali.
+              </div>
+            ) : (
+              <div style={{ display:"grid", gap:"1.5rem" }}>
+
+                {/* Semaforo */}
+                <div style={{
+                  background: corrBg[correlationWarning.level],
+                  border:`1px solid ${corrBorder[correlationWarning.level]}`,
+                  borderRadius:8, padding:"0.9rem 1.2rem", display:"flex", alignItems:"center", gap:"0.8rem"
+                }}>
+                  <div style={{ width:14, height:14, borderRadius:"50%", flexShrink:0, background:corrDot[correlationWarning.level] }} />
+                  <span style={{ fontSize:"0.85rem" }}><strong>Correlazione:</strong> {correlationWarning.msg}</span>
+                </div>
+
+                {/* KPI */}
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"1rem" }}>
+                  {[
+                    { label:"Volatilità media", value: avgVol.toFixed(1)+"%", sub:"annualizzata" },
+                    { label:"Rischio complessivo", value: RISK_LABELS[avgRisk]||"—", sub:"scala azionaria" },
+                    { label:"ETF nel portafoglio", value: activeETFs.length, sub:"strumenti" },
+                  ].map(k => (
+                    <div key={k.label} style={{ background:"white", borderRadius:8, padding:"1rem", border:"1px solid #e2e8f0", textAlign:"center" }}>
+                      <div style={{ fontSize:"1.5rem", fontWeight:"bold", color:"#1a1a2e" }}>{k.value}</div>
+                      <div style={{ fontSize:"0.75rem", color:"#888", marginTop:2 }}>{k.label}</div>
+                      <div style={{ fontSize:"0.7rem", color:"#bbb" }}>{k.sub}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Grafico crescita */}
+                <div style={{ background:"white", borderRadius:8, padding:"1.2rem", border:"1px solid #e2e8f0" }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:"1rem", flexWrap:"wrap", gap:"0.5rem" }}>
+                    <h3 style={{ margin:0, fontSize:"0.95rem", color:"#333" }}>📈 Crescita simulata di €10.000 (2019–2025)</h3>
+                    {growthData.length > 0 && (() => {
+                      const finale = growthData[growthData.length-1].valore;
+                      const pct = ((finale-10000)/10000*100).toFixed(1);
+                      return (
+                        <span style={{ fontSize:"1rem", fontWeight:"bold", color: finale>=10000?"#16a34a":"#dc2626" }}>
+                          €{finale.toLocaleString("it-IT")} · {pct>=0?"+":""}{pct}%
+                        </span>
+                      );
+                    })()}
+                  </div>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <LineChart data={growthData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="year" tick={{ fontSize:12, fontFamily:"Georgia,serif" }} />
+                      <YAxis tick={{ fontSize:11 }} tickFormatter={v => "€"+v.toLocaleString("it-IT")} width={82} />
+                      <Tooltip formatter={v => ["€"+v.toLocaleString("it-IT"), "Valore"]} />
+                      <Line type="monotone" dataKey="valore" stroke="#c9a84c" strokeWidth={2.5} dot={{ r:4, fill:"#c9a84c" }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                  <div style={{ fontSize:"0.72rem", color:"#aaa", marginTop:"0.5rem" }}>
+                    Rendimenti stimati sugli indici sottostanti. Non include costi di transazione né fiscalità. Fonte: stime indici MSCI/S&amp;P, justETF.
+                  </div>
+                </div>
+
+                {/* Rendimento annuale */}
+                <div style={{ background:"white", borderRadius:8, padding:"1.2rem", border:"1px solid #e2e8f0" }}>
+                  <h3 style={{ margin:"0 0 1rem", fontSize:"0.95rem", color:"#333" }}>📅 Rendimento annuale del portafoglio</h3>
+                  <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap" }}>
+                    {portfolioReturns.map(d => (
+                      <div key={d.year} style={{
+                        flex:"1 1 70px",
+                        background: d.rendimento>=0 ? "#f0fdf4" : "#fef2f2",
+                        border:`1px solid ${d.rendimento>=0?"#86efac":"#fca5a5"}`,
+                        borderRadius:6, padding:"0.7rem", textAlign:"center"
+                      }}>
+                        <div style={{ fontSize:"0.7rem", color:"#666" }}>{d.year}</div>
+                        <div style={{ fontSize:"1.1rem", fontWeight:"bold", color:d.rendimento>=0?"#16a34a":"#dc2626" }}>
+                          {formatPct(d.rendimento)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Torte */}
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"1rem" }}>
+                  <div style={{ background:"white", borderRadius:8, padding:"1.2rem", border:"1px solid #e2e8f0" }}>
+                    <h3 style={{ margin:"0 0 0.8rem", fontSize:"0.9rem", color:"#333" }}>Composizione ETF</h3>
+                    <ResponsiveContainer width="100%" height={160}>
+                      <PieChart>
+                        <Pie data={pieData} cx="50%" cy="50%" innerRadius={35} outerRadius={65} dataKey="value">
+                          {pieData.map((entry,i) => <Cell key={i} fill={entry.color} />)}
+                        </Pie>
+                        <Tooltip formatter={v => v+"%"} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div style={{ display:"flex", flexDirection:"column", gap:4, marginTop:"0.5rem" }}>
+                      {pieData.map(d => (
+                        <div key={d.name} style={{ display:"flex", justifyContent:"space-between", fontSize:"0.73rem" }}>
+                          <span style={{ display:"flex", alignItems:"center", gap:5 }}>
+                            <span style={{ width:8, height:8, borderRadius:"50%", background:d.color, display:"inline-block" }} />
+                            {d.name}
+                          </span>
+                          <span style={{ fontWeight:"bold" }}>{d.value}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={{ background:"white", borderRadius:8, padding:"1.2rem", border:"1px solid #e2e8f0" }}>
+                    <h3 style={{ margin:"0 0 0.8rem", fontSize:"0.9rem", color:"#333" }}>Esposizione geografica</h3>
+                    <ResponsiveContainer width="100%" height={160}>
+                      <PieChart>
+                        <Pie data={countryMap} cx="50%" cy="50%" innerRadius={35} outerRadius={65} dataKey="value">
+                          {countryMap.map((entry,i) => <Cell key={i} fill={COUNTRY_COLORS[i%COUNTRY_COLORS.length]} />)}
+                        </Pie>
+                        <Tooltip formatter={v => v.toFixed(1)+"%"} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div style={{ display:"flex", flexDirection:"column", gap:4, marginTop:"0.5rem" }}>
+                      {countryMap.map((d,i) => (
+                        <div key={d.name} style={{ display:"flex", justifyContent:"space-between", fontSize:"0.73rem" }}>
+                          <span style={{ display:"flex", alignItems:"center", gap:5 }}>
+                            <span style={{ width:8, height:8, borderRadius:"50%", background:COUNTRY_COLORS[i%COUNTRY_COLORS.length], display:"inline-block" }} />
+                            {d.name}
+                          </span>
+                          <span style={{ fontWeight:"bold" }}>{d.value}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* FOOTER */}
+        <div style={{ marginTop:"2rem", padding:"1rem", borderTop:"1px solid #ddd", fontSize:"0.72rem", color:"#999", lineHeight:1.6 }}>
+          <strong>Note metodologiche.</strong> Rendimenti annuali 2020–2025 da justETF in EUR.
+          XUSE: proxy VEU convertito in EUR al cambio BCE fine anno.
+          EXCH: 2020 proxy EMXC→EUR; 2021–2025 reali da justETF.
+          Ripartizioni geografiche: FTSE Russell e MSCI, aggiornate a fine 2025.
+          Volatilità: deviazione standard campionaria sui rendimenti annuali 2020–2025 (6 osservazioni — stima indicativa).
+          Non includono TER, spread, fiscalità.
+          Questo strumento ha scopo esclusivamente educativo e non costituisce consulenza finanziaria ai sensi del D.Lgs. 58/1998 (TUF).
+          <br /><br />
+          <a href="https://www.filosofaresuimercati.eu" target="_blank" style={{ color:"#c9a84c" }}>
+            filosofaresuimercati.eu
+          </a> · Gianni &amp; Claude (Anthropic)
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.render(<App />, document.getElementById("root"));
+</script>
+</body>
+</html>
