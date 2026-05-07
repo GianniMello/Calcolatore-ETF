@@ -1,252 +1,241 @@
-<div id="etf-root"></div>
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Costruttore Portafoglio ETF — Filosofare sui Mercati</title>
 <style>
-#etf-root{font-family:Georgia,serif;background:#f8f7f3;color:#1a1a2e}
-#etf-root *{box-sizing:border-box}
-#etf-root input[type=range]{-webkit-appearance:none;width:100%;height:6px;background:#e2e8f0;border-radius:3px;outline:none;cursor:pointer;margin:4px 0}
-#etf-root input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;cursor:pointer}
-#etf-root button{font-family:Georgia,serif;cursor:pointer}
-.etf-tb{padding:8px 16px;border:none;background:none;font-family:Georgia,serif;font-size:14px;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;color:#666}
-.etf-tb.on{border-bottom:3px solid #c9a84c;color:#1a1a2e;font-weight:bold}
-.etf-card{background:white;border-radius:8px;padding:14px 16px;margin-bottom:10px}
-.etf-kpi{background:white;border-radius:8px;padding:12px;border:1px solid #e2e8f0;text-align:center}
-.etf-yr{flex:1 1 70px;border-radius:6px;padding:8px;text-align:center}
-.etf-bx{background:white;border-radius:8px;padding:16px;border:1px solid #e2e8f0;margin-bottom:12px}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Georgia, serif; background: #f8f7f3; color: #1a1a2e; }
+header { background: #1a1a2e; color: #f8f7f3; padding: 1.6rem 1.5rem; border-bottom: 4px solid #c9a84c; }
+header .sub { font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase; color: #c9a84c; margin-bottom: 0.3rem; }
+header h1 { font-size: 1.4rem; font-weight: bold; line-height: 1.2; }
+header p { font-size: 0.8rem; color: #a0a0b0; margin-top: 0.3rem; }
+.cappello { background: #e8f4f8; border-left: 5px solid #2e86ab; padding: 1rem 1.4rem; margin: 1.2rem auto; max-width: 860px; font-size: 0.85rem; color: #1a3a4a; line-height: 1.7; }
+.wrap { max-width: 860px; margin: 0 auto; padding: 0 1rem 3rem; }
+.tabs { display: flex; gap: 0.5rem; border-bottom: 2px solid #ddd; margin-bottom: 1.5rem; }
+.tab { padding: 0.6rem 1.2rem; border: none; background: none; cursor: pointer; font-family: Georgia, serif; font-size: 0.88rem; border-bottom: 3px solid transparent; color: #666; margin-bottom: -2px; }
+.tab.active { border-bottom-color: #c9a84c; color: #1a1a2e; font-weight: bold; }
+.panel { display: none; }
+.panel.active { display: block; }
+.total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; font-size: 0.85rem; color: #555; }
+.total-num { font-size: 1.4rem; font-weight: bold; }
+.ok { color: #16a34a; } .over { color: #dc2626; } .under { color: #d97706; }
+.progress-track { height: 6px; background: #e2e8f0; border-radius: 3px; margin-bottom: 1.4rem; }
+.progress-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+.etf-card { background: white; border-radius: 8px; padding: 1rem 1.2rem; border: 1px solid #e2e8f0; margin-bottom: 0.8rem; }
+.etf-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
+.etf-desc { font-size: 0.75rem; color: #888; margin-top: 2px; }
+.etf-pct { font-size: 1.3rem; font-weight: bold; text-align: right; }
+.risk-dots { display: flex; gap: 3px; justify-content: flex-end; margin-top: 3px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; }
+.etf-meta { display: flex; justify-content: space-between; font-size: 0.7rem; color: #aaa; margin-top: 4px; }
+input[type=range] { width: 100%; cursor: pointer; margin: 4px 0; }
+.btn-reset { margin-top: 1rem; background: none; border: 1px solid #ccc; border-radius: 6px; padding: 0.5rem 1.2rem; cursor: pointer; color: #666; font-size: 0.85rem; font-family: Georgia, serif; }
+.empty { text-align: center; padding: 3rem; color: #999; font-size: 0.95rem; }
+.sem { border-radius: 8px; padding: 0.9rem 1.2rem; display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.2rem; font-size: 0.85rem; }
+.sem-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+.kpi-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin-bottom: 1.2rem; }
+.kpi { background: white; border-radius: 8px; padding: 1rem; border: 1px solid #e2e8f0; text-align: center; }
+.kpi-val { font-size: 1.4rem; font-weight: bold; }
+.kpi-lbl { font-size: 0.73rem; color: #888; margin-top: 3px; }
+.card { background: white; border-radius: 8px; padding: 1.2rem; border: 1px solid #e2e8f0; margin-bottom: 1.2rem; }
+.card h3 { font-size: 0.92rem; color: #333; margin-bottom: 1rem; }
+.anni { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.anno { flex: 1 1 70px; border-radius: 6px; padding: 0.6rem; text-align: center; }
+.anno .ay { font-size: 0.7rem; color: #666; }
+.anno .av { font-size: 1.05rem; font-weight: bold; }
+.br { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem; font-size: 0.8rem; }
+.bl { width: 130px; flex-shrink: 0; color: #555; }
+.bt { flex: 1; height: 14px; background: #f0ece6; border-radius: 4px; overflow: hidden; }
+.bf { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 6px; }
+.bv { font-size: 0.72rem; color: white; font-weight: bold; }
+.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.legend { display: flex; flex-direction: column; gap: 4px; margin-top: 0.6rem; }
+.li { display: flex; justify-content: space-between; font-size: 0.73rem; align-items: center; }
+.ld { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-right: 5px; display: inline-block; }
+.footer { margin-top: 2rem; padding: 1rem; border-top: 1px solid #ddd; font-size: 0.72rem; color: #999; line-height: 1.6; }
+@media(max-width:500px){.kpi-grid{grid-template-columns:1fr 1fr}.charts-grid{grid-template-columns:1fr}}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.8.0/Recharts.js" crossorigin="anonymous"></script>
+</head>
+<body>
+<header>
+  <div class="sub">Filosofare sui Mercati — Strumenti</div>
+  <h1>Costruttore di Portafoglio Azionario ETF</h1>
+  <p>Solo ETF UCITS ad accumulazione · dati storici stimati sugli indici sottostanti</p>
+</header>
+<div class="cappello">
+  <strong>Come funziona.</strong> Usa i cursori per assegnare le percentuali agli ETF che vuoi includere.
+  Il totale deve raggiungere il 100%. Il grafico mostra la crescita simulata di €10.000 investiti a inizio 2019.
+  <strong>Non è un consiglio di investimento</strong> — i rendimenti passati non garantiscono quelli futuri.
+</div>
+<div class="wrap">
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('costruttore')">⚙️ Costruttore</button>
+    <button class="tab" onclick="showTab('analisi')">📊 Analisi portafoglio</button>
+  </div>
+  <div id="panel-costruttore" class="panel active">
+    <div class="total-row"><span>Allocazione totale</span><span class="total-num under" id="tot">0%</span></div>
+    <div class="progress-track"><div class="progress-fill" id="prog" style="width:0%;background:#c9a84c"></div></div>
+    <div id="etf-list"></div>
+    <button class="btn-reset" onclick="resetAll()">↺ Azzera tutto</button>
+  </div>
+  <div id="panel-analisi" class="panel"><div id="analisi"></div></div>
+</div>
+
 <script>
-(function(){
-var h=React.createElement,uS=React.useState,uM=React.useMemo;
-var RC=Recharts;
+const ETF=[
+  {t:'VWCE',l:'World All-Cap',r:3,c:'#2563eb',ret:{2020:5.7,2021:27.5,2022:-13.0,2023:19.0,2024:24.7,2025:8.4},v:15.0,geo:{USA:61,Giappone:5,UK:3,Francia:3,Canada:3,Emergenti:12,Altro:13},d:'Esposizione totale al mercato azionario globale. Il cuore di ogni portafoglio passivo.'},
+  {t:'CSPX',l:'S&P 500 (USA)',r:3,c:'#1d4ed8',ret:{2020:7.0,2021:38.8,2022:-12.8,2023:21.5,2024:27.4,2025:2.8},v:18.7,geo:{USA:100},d:'Le 500 maggiori società americane. Massima concentrazione USA, massima performance storica.'},
+  {t:'XDEW',l:'S&P 500 Equal Weight',r:3,c:'#3b82f6',ret:{2020:-4.9,2021:28.2,2022:-11.2,2023:18.1,2024:13.9,2025:20.8},v:15.5,geo:{USA:100},d:'S&P 500 con peso uguale per ogni titolo. Riduce il dominio dei Magnificent Seven.'},
+  {t:'CNDX',l:'Nasdaq 100',r:5,c:'#7c3aed',ret:{2020:48.4,2021:27.3,2022:-32.6,2023:53.1,2024:27.1,2025:8.1},v:31.3,geo:{USA:96,Altro:4},d:'Le 100 maggiori società del Nasdaq. Alta volatilità, alto potenziale.'},
+  {t:'XUSE',l:'World ex-USA',r:3,c:'#0891b2',ret:{2020:1.8,2021:16.9,2022:-10.4,2023:10.1,2024:12.3,2025:11.0},v:9.8,geo:{Giappone:16,UK:10,Francia:8,Canada:8,Germania:7,Svizzera:7,Altro:44},d:'Mercati sviluppati globali esclusi gli USA.'},
+  {t:'VWCG',l:'Europa (VWCG)',r:3,c:'#0284c7',ret:{2020:1.8,2021:22.7,2022:-12.0,2023:20.2,2024:9.8,2025:19.8},v:13.5,geo:{UK:23,Francia:15,Svizzera:14,Germania:12,Olanda:8,Danimarca:5,Altro:23},d:'Azionario europeo sviluppato. Vanguard FTSE Developed Europe UCITS ETF Acc.'},
+  {t:'EXCH',l:'Emergenti ex-Cina',r:4,c:'#d97706',ret:{2020:3.8,2021:11.5,2022:-14.2,2023:15.7,2024:10.2,2025:19.2},v:11.9,geo:{Taiwan:27,India:23,Corea:15,Brasile:6,'Sud Africa':5,Altro:24},d:'Mercati emergenti senza esposizione cinese.'},
+  {t:'ICHN',l:'Cina (ICHN)',r:5,c:'#dc2626',ret:{2020:19.6,2021:-13.5,2022:-14.7,2023:-11.6,2024:29.4,2025:13.8},v:19.4,geo:{Cina:100},d:'Esposizione diretta al mercato cinese. Alta volatilità, rischio regolatorio significativo.'},
+  {t:'WSML',l:'Small Cap Globali',r:4,c:'#059669',ret:{2020:11.6,2021:22.1,2022:-8.7,2023:17.1,2024:6.7,2025:5.9},v:10.7,geo:{USA:57,Giappone:12,UK:6,Canada:5,Australia:4,Altro:16},d:'Piccole capitalizzazioni mondiali. Premio small cap nel lungo periodo.'}
+];
+const RC=['','#22c55e','#84cc16','#f59e0b','#f97316','#ef4444'];
+const RL=['','Molto basso','Basso','Moderato','Elevato','Molto elevato'];
+const YEARS=[2020,2021,2022,2023,2024,2025];
+const CC=['#2563eb','#7c3aed','#0891b2','#d97706','#dc2626','#059669','#db2777','#6366f1','#0d9488','#92400e'];
+let A={};ETF.forEach(e=>A[e.t]=0);
 
-var ETF={
-VWCE:{lb:'World All-Cap',rk:3,cl:'#2563eb',vl:15.0,rt:{2020:5.7,2021:27.5,2022:-13.0,2023:19.0,2024:24.7,2025:8.4},co:{'USA':61,'Giappone':5,'UK':3,'Francia':3,'Canada':3,'Emergenti':12,'Altro':13},ds:'Esposizione totale al mercato azionario globale.'},
-CSPX:{lb:'S&P 500 (USA)',rk:3,cl:'#1d4ed8',vl:18.7,rt:{2020:7.0,2021:38.8,2022:-12.8,2023:21.5,2024:27.4,2025:2.8},co:{'USA':100},ds:'Le 500 maggiori societa americane.'},
-XDEW:{lb:'S&P 500 Equal Weight',rk:3,cl:'#3b82f6',vl:15.5,rt:{2020:-4.9,2021:28.2,2022:-11.2,2023:18.1,2024:13.9,2025:20.8},co:{'USA':100},ds:'S&P 500 con peso uguale. Riduce il dominio dei Magnificent Seven.'},
-CNDX:{lb:'Nasdaq 100',rk:5,cl:'#7c3aed',vl:31.3,rt:{2020:48.4,2021:27.3,2022:-32.6,2023:53.1,2024:27.1,2025:8.1},co:{'USA':96,'Altro':4},ds:'Le 100 maggiori del Nasdaq. Alta volatilita, alto potenziale.'},
-XUSE:{lb:'World ex-USA',rk:3,cl:'#0891b2',vl:9.8,rt:{2020:1.8,2021:16.9,2022:-10.4,2023:10.1,2024:12.3,2025:11.0},co:{'Giappone':16,'UK':10,'Francia':8,'Canada':8,'Germania':7,'Svizzera':7,'Altro':44},ds:'Mercati sviluppati globali esclusi gli USA.'},
-VWCG:{lb:'Europa (VWCG)',rk:3,cl:'#0284c7',vl:13.5,rt:{2020:1.8,2021:22.7,2022:-12.0,2023:20.2,2024:9.8,2025:19.8},co:{'UK':23,'Francia':15,'Svizzera':14,'Germania':12,'Olanda':8,'Altro':28},ds:'Azionario europeo sviluppato.'},
-EXCH:{lb:'Emergenti ex-Cina',rk:4,cl:'#d97706',vl:11.9,rt:{2020:3.8,2021:11.5,2022:-14.2,2023:15.7,2024:10.2,2025:19.2},co:{'Taiwan':27,'India':23,'Corea':15,'Brasile':6,'SudAfrica':5,'Altro':24},ds:'Mercati emergenti senza esposizione cinese.'},
-ICHN:{lb:'Cina (ICHN)',rk:5,cl:'#dc2626',vl:19.4,rt:{2020:19.6,2021:-13.5,2022:-14.7,2023:-11.6,2024:29.4,2025:13.8},co:{'Cina':100},ds:'Esposizione diretta al mercato cinese.'},
-WSML:{lb:'Small Cap Globali',rk:4,cl:'#059669',vl:10.7,rt:{2020:11.6,2021:22.1,2022:-8.7,2023:17.1,2024:6.7,2025:5.9},co:{'USA':57,'Giappone':12,'UK':6,'Canada':5,'Australia':4,'Altro':16},ds:'Piccole capitalizzazioni mondiali.'}
-};
+function gTot(){return Object.values(A).reduce((a,b)=>a+b,0);}
+function gAct(){return ETF.filter(e=>A[e.t]>0);}
 
-var RL=['','Molto basso','Basso','Moderato','Elevato','Molto elevato'];
-var RC2=['','#22c55e','#84cc16','#f59e0b','#f97316','#ef4444'];
-var YRS=[2020,2021,2022,2023,2024,2025];
-var CC=['#2563eb','#7c3aed','#0891b2','#d97706','#dc2626','#059669','#db2777','#6366f1','#0d9488','#92400e'];
-var KS=Object.keys(ETF);
-
-function Dots(p){
-  return h('div',{style:{display:'flex',gap:3}},
-    [1,2,3,4,5].map(function(i){return h('div',{key:i,style:{width:8,height:8,borderRadius:'50%',background:i<=p.l?RC2[p.l]:'#e2e8f0'}});})
-  );
+function buildList(){
+  document.getElementById('etf-list').innerHTML=ETF.map(e=>`
+    <div class="etf-card" id="card-${e.t}">
+      <div class="etf-top">
+        <div>
+          <span style="font-weight:bold;font-size:.95rem;color:${e.c}">${e.t}</span>
+          <span style="font-size:.85rem;color:#333;margin-left:.5rem">${e.l}</span>
+          <div class="etf-desc">${e.d}</div>
+        </div>
+        <div style="text-align:right;min-width:55px">
+          <div class="etf-pct" id="pct-${e.t}" style="color:#ccc">0%</div>
+          <div class="risk-dots">${[1,2,3,4,5].map(i=>`<div class="dot" style="background:${i<=e.r?RC[e.r]:'#e2e8f0'}"></div>`).join('')}</div>
+        </div>
+      </div>
+      <input type="range" min="0" max="100" step="5" value="0" style="accent-color:${e.c}" oninput="upd('${e.t}',this.value)">
+      <div class="etf-meta"><span>0%</span><span>Vol: ${e.v}% · ${RL[e.r]}</span><span>100%</span></div>
+    </div>`).join('');
 }
 
-function App(){
-  var init={}; KS.forEach(function(k){init[k]=0;});
-  var as=uS(init); var al=as[0]; var sa=as[1];
-  var ts=uS('b'); var tb=ts[0]; var st=ts[1];
-
-  var tot=uM(function(){return KS.reduce(function(s,k){return s+al[k];},0);},[al]);
-  var act=uM(function(){return KS.filter(function(k){return al[k]>0;});},[al]);
-
-  var gr=uM(function(){
-    if(!tot)return[];
-    var v=10000,d=[{y:'2019',v:10000}];
-    YRS.forEach(function(yr){
-      var r=0;
-      act.forEach(function(k){r+=(al[k]/tot)*(ETF[k].rt[yr]||0);});
-      v=v*(1+r/100);
-      d.push({y:String(yr),v:Math.round(v)});
-    });
-    return d;
-  },[act,tot]);
-
-  var ar=uM(function(){
-    if(!tot)return[];
-    return YRS.map(function(yr){
-      var r=0;
-      act.forEach(function(k){r+=(al[k]/tot)*(ETF[k].rt[yr]||0);});
-      return {y:String(yr),v:parseFloat(r.toFixed(1))};
-    });
-  },[act,tot]);
-
-  var av=uM(function(){
-    if(!tot)return 0;
-    return act.reduce(function(s,k){return s+(al[k]/tot)*ETF[k].vl;},0);
-  },[act,tot]);
-
-  var ar2=uM(function(){
-    if(!tot)return 0;
-    return Math.round(act.reduce(function(s,k){return s+(al[k]/tot)*ETF[k].rk;},0));
-  },[act,tot]);
-
-  var cm=uM(function(){
-    var m={};
-    act.forEach(function(k){
-      var w=al[k]/tot;
-      Object.keys(ETF[k].co).forEach(function(c){m[c]=(m[c]||0)+w*ETF[k].co[c];});
-    });
-    return Object.keys(m).map(function(n){return {n:n,v:parseFloat(m[n].toFixed(1))};}).sort(function(a,b){return b.v-a.v;});
-  },[act,tot]);
-
-  var pd=act.map(function(k){return {n:ETF[k].lb,v:parseFloat((al[k]/(tot||1)*100).toFixed(1)),c:ETF[k].cl};});
-  var fn=gr.length?gr[gr.length-1].v:0;
-  var pt=fn?((fn-10000)/10000*100).toFixed(1):0;
-  var uw=tot>0?(['CSPX','XDEW','CNDX'].reduce(function(s,k){return s+(al[k]||0);},0))/tot:0;
-  var cc=uw>0.7?'#dc2626':uw>0.5?'#f97316':'#16a34a';
-  var cb=uw>0.7?'#fef2f2':uw>0.5?'#fff7ed':'#f0fdf4';
-  var cm2=uw>0.7?'Oltre 70% USA - correlazione molto elevata.':uw>0.5?'Oltre 50% USA - correlazione alta.':'Buona diversificazione geografica.';
-
-  function upd(k,v){
-    var nv=parseInt(v);
-    sa(function(p){
-      var altri=KS.reduce(function(s,x){return s+(x===k?0:p[x]);},0);
-      if(altri+nv>100){nv=100-altri;}
-      if(nv<0){nv=0;}
-      var n=Object.assign({},p);n[k]=nv;return n;
-    });
-  }
-  function rst(){var n={};KS.forEach(function(k){n[k]=0;});sa(n);}
-
-  return h('div',{id:'etf-root'},
-    h('div',{style:{background:'#1a1a2e',color:'#f8f7f3',padding:'16px',borderBottom:'4px solid #c9a84c'}},
-      h('div',{style:{fontSize:'11px',letterSpacing:'0.2em',textTransform:'uppercase',color:'#c9a84c',marginBottom:4}},'Filosofare sui Mercati - Strumenti'),
-      h('h2',{style:{fontSize:'22px',fontWeight:'bold',margin:'0 0 4px',color:'#f8f7f3'}},'Costruttore di Portafoglio Azionario ETF'),
-      h('p',{style:{fontSize:'13px',color:'#a0a0b0',margin:0}},'ETF UCITS ad accumulazione - Dati reali justETF 2020-2025 in EUR')
-    ),
-    h('div',{style:{background:'#e8f4f8',borderLeft:'5px solid #2e86ab',padding:'12px 16px',fontSize:'13px',color:'#1a3a4a',lineHeight:1.7}},
-      h('strong',null,'Come funziona. '),
-      'Cursori per assegnare le percentuali (totale = 100%). Vai in Analisi per i risultati. La scala del rischio e relativa all\'universo azionario.'
-    ),
-    h('div',{style:{padding:'16px 0 32px'}},
-      h('div',{style:{display:'flex',gap:4,marginBottom:16,borderBottom:'2px solid #ddd'}},
-        h('button',{className:'etf-tb'+(tb==='b'?' on':''),onClick:function(){st('b');}},'Costruttore'),
-        h('button',{className:'etf-tb'+(tb==='a'?' on':''),onClick:function(){st('a');}},'Analisi portafoglio')
-      ),
-
-      tb==='b'&&h('div',null,
-        h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}},
-          h('span',{style:{fontSize:13,color:'#555'}},'Allocazione totale'),
-          h('span',{style:{fontSize:20,fontWeight:'bold',color:tot===100?'#16a34a':tot>100?'#dc2626':'#d97706'}},
-            tot+'%'+(tot===100?' ok':tot>100?' supera 100%':tot>0?' mancano '+(100-tot)+'%':'')
-          )
-        ),
-        h('div',{style:{height:6,background:'#e2e8f0',borderRadius:3,marginBottom:16}},
-          h('div',{style:{height:'100%',borderRadius:3,width:Math.min(tot,100)+'%',background:tot===100?'#16a34a':tot>100?'#dc2626':'#c9a84c'}})
-        ),
-        KS.map(function(k){
-          var e=ETF[k];
-          return h('div',{key:k,className:'etf-card',style:{border:al[k]>0?'2px solid '+e.cl:'1px solid #e2e8f0'}},
-            h('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:6}},
-              h('div',null,
-                h('div',{style:{display:'flex',alignItems:'center',gap:8}},
-                  h('span',{style:{fontWeight:'bold',fontSize:14,color:e.cl}},k),
-                  h('span',{style:{fontSize:13,color:'#333'}},e.lb)
-                ),
-                h('div',{style:{fontSize:11,color:'#888',marginTop:2}},e.ds)
-              ),
-              h('div',{style:{textAlign:'right',minWidth:65}},
-                h('div',{style:{fontSize:18,fontWeight:'bold',color:al[k]>0?e.cl:'#ccc'}},al[k]+'%'),
-                h(Dots,{l:e.rk})
-              )
-            ),
-            h('input',{type:'range',min:0,max:100,step:5,value:al[k],style:{accentColor:e.cl},onChange:function(ev){upd(k,ev.target.value);}}),
-            h('div',{style:{display:'flex',justifyContent:'space-between',fontSize:11,color:'#aaa'}},
-              h('span',null,'0%'),
-              h('span',null,'Vol '+e.vl+'% - '+RL[e.rk]),
-              h('span',null,'100%')
-            )
-          );
-        }),
-        h('button',{onClick:rst,style:{marginTop:8,background:'none',border:'1px solid #ccc',borderRadius:6,padding:'6px 16px',color:'#666',fontSize:13}},'Azzera tutto')
-      ),
-
-      tb==='a'&&h('div',null,
-        !tot?h('div',{style:{textAlign:'center',padding:'40px',color:'#999'}},'Nessun ETF selezionato.'):
-        h('div',{style:{display:'grid',gap:12}},
-          h('div',{style:{background:cb,border:'1px solid '+cc,borderRadius:8,padding:'10px 14px',display:'flex',alignItems:'center',gap:10}},
-            h('div',{style:{width:12,height:12,borderRadius:'50%',background:cc,flexShrink:0}}),
-            h('span',{style:{fontSize:13}},h('strong',null,'Correlazione: '),cm2)
-          ),
-          h('div',{style:{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}},
-            h('div',{className:'etf-kpi'},h('div',{style:{fontSize:22,fontWeight:'bold'}},av.toFixed(1)+'%'),h('div',{style:{fontSize:11,color:'#888'}},'Volatilita media')),
-            h('div',{className:'etf-kpi'},h('div',{style:{fontSize:16,fontWeight:'bold'}},RL[ar2]||'-'),h('div',{style:{fontSize:11,color:'#888'}},'Rischio')),
-            h('div',{className:'etf-kpi'},h('div',{style:{fontSize:22,fontWeight:'bold'}},act.length),h('div',{style:{fontSize:11,color:'#888'}},'ETF'))
-          ),
-          h('div',{className:'etf-bx'},
-            h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:12}},
-              h('h3',{style:{margin:0,fontSize:14,color:'#333'}},'Crescita simulata di 10.000 EUR (2019-2025)'),
-              fn&&h('span',{style:{fontSize:15,fontWeight:'bold',color:fn>=10000?'#16a34a':'#dc2626'}},
-                'EUR '+fn.toLocaleString('it-IT')+' - '+(pt>=0?'+':'')+pt+'%'
-              )
-            ),
-            h(RC.ResponsiveContainer,{width:'100%',height:200},
-              h(RC.LineChart,{data:gr},
-                h(RC.CartesianGrid,{strokeDasharray:'3 3',stroke:'#f0f0f0'}),
-                h(RC.XAxis,{dataKey:'y',tick:{fontSize:11}}),
-                h(RC.YAxis,{tick:{fontSize:10},tickFormatter:function(v){return 'EUR '+v.toLocaleString('it-IT');},width:85}),
-                h(RC.Tooltip,{formatter:function(v){return ['EUR '+v.toLocaleString('it-IT'),'Valore'];}}),
-                h(RC.Line,{type:'monotone',dataKey:'v',stroke:'#c9a84c',strokeWidth:2.5,dot:{r:4,fill:'#c9a84c'}})
-              )
-            )
-          ),
-          h('div',{className:'etf-bx'},
-            h('h3',{style:{margin:'0 0 10px',fontSize:14,color:'#333'}},'Rendimento annuale'),
-            h('div',{style:{display:'flex',gap:6,flexWrap:'wrap'}},
-              ar.map(function(d){
-                return h('div',{key:d.y,className:'etf-yr',style:{background:d.v>=0?'#f0fdf4':'#fef2f2',border:'1px solid '+(d.v>=0?'#86efac':'#fca5a5')}},
-                  h('div',{style:{fontSize:11,color:'#666'}},d.y),
-                  h('div',{style:{fontSize:16,fontWeight:'bold',color:d.v>=0?'#16a34a':'#dc2626'}},(d.v>=0?'+':'')+d.v+'%')
-                );
-              })
-            )
-          ),
-          h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}},
-            h('div',{className:'etf-bx'},
-              h('h3',{style:{margin:'0 0 8px',fontSize:13}},'Composizione ETF'),
-              h(RC.ResponsiveContainer,{width:'100%',height:160},
-                h(RC.PieChart,null,
-                  h(RC.Pie,{data:pd,cx:'50%',cy:'50%',innerRadius:35,outerRadius:60,dataKey:'v'},
-                    pd.map(function(e,i){return h(RC.Cell,{key:i,fill:e.c});})
-                  ),
-                  h(RC.Tooltip,{formatter:function(v){return v+'%';}})
-                )
-              ),
-              pd.map(function(d){return h('div',{key:d.n,style:{display:'flex',justifyContent:'space-between',fontSize:11,marginBottom:2}},
-                h('span',null,h('span',{style:{display:'inline-block',width:7,height:7,borderRadius:'50%',background:d.c,marginRight:4}}),d.n),
-                h('span',{style:{fontWeight:'bold'}},d.v+'%')
-              );})
-            ),
-            h('div',{className:'etf-bx'},
-              h('h3',{style:{margin:'0 0 8px',fontSize:13}},'Esposizione geografica'),
-              h(RC.ResponsiveContainer,{width:'100%',height:160},
-                h(RC.PieChart,null,
-                  h(RC.Pie,{data:cm,cx:'50%',cy:'50%',innerRadius:35,outerRadius:60,dataKey:'v'},
-                    cm.map(function(e,i){return h(RC.Cell,{key:i,fill:CC[i%CC.length]});})
-                  ),
-                  h(RC.Tooltip,{formatter:function(v){return v.toFixed(1)+'%';}})
-                )
-              ),
-              cm.map(function(d,i){return h('div',{key:d.n,style:{display:'flex',justifyContent:'space-between',fontSize:11,marginBottom:2}},
-                h('span',null,h('span',{style:{display:'inline-block',width:7,height:7,borderRadius:'50%',background:CC[i%CC.length],marginRight:4}}),d.n),
-                h('span',{style:{fontWeight:'bold'}},d.v+'%')
-              );})
-            )
-          )
-        )
-      ),
-      h('div',{style:{marginTop:24,paddingTop:12,borderTop:'1px solid #ddd',fontSize:11,color:'#999',lineHeight:1.6}},
-        h('strong',null,'Note metodologiche. '),
-        'Rendimenti 2020-2025 da justETF in EUR. Volatilita: deviazione standard campionaria 2020-2025. Non includono TER, spread ne fiscalita. Scopo esclusivamente educativo. Non costituisce consulenza finanziaria (D.Lgs. 58/1998).'
-      )
-    )
-  );
+function upd(t,val){
+  val=parseInt(val); A[t]=val;
+  const e=ETF.find(x=>x.t===t);
+  const p=document.getElementById('pct-'+t);
+  p.textContent=val+'%'; p.style.color=val>0?e.c:'#ccc';
+  const card=document.getElementById('card-'+t);
+  card.style.border=val>0?`2px solid ${e.c}`:'1px solid #e2e8f0';
+  const tot=gTot();
+  const el=document.getElementById('tot');
+  el.textContent=tot+'%'+(tot===100?' ✓':tot>100?` — supera di ${tot-100}%`:tot>0?` — mancano ${100-tot}%`:'');
+  el.className='total-num '+(tot===100?'ok':tot>100?'over':'under');
+  const pf=document.getElementById('prog');
+  pf.style.width=Math.min(tot,100)+'%';
+  pf.style.background=tot===100?'#16a34a':tot>100?'#dc2626':'#c9a84c';
 }
 
-var root=document.getElementById('etf-root');
-if(root){ReactDOM.createRoot(root).render(h(App));}
-})();
+function resetAll(){ETF.forEach(e=>{A[e.t]=0;document.querySelector(`#card-${e.t} input`).value=0;upd(e.t,0);});}
+
+function showTab(n){
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['costruttore','analisi'][i]===n));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+n).classList.add('active');
+  if(n==='analisi')buildAnalisi();
+}
+
+function buildAnalisi(){
+  const tot=gTot(), el=document.getElementById('analisi');
+  if(!tot){el.innerHTML='<div class="empty">Nessun ETF selezionato. Torna al costruttore.</div>';return;}
+  const act=gAct();
+  const avgV=act.reduce((a,e)=>a+(A[e.t]/tot)*e.v,0);
+  const avgR=Math.round(act.reduce((a,e)=>a+(A[e.t]/tot)*e.r,0));
+  const pRet=YEARS.map(y=>{let r=0;act.forEach(e=>r+=(A[e.t]/tot)*(e.ret[y]||0));return{y,r:parseFloat(r.toFixed(2))};});
+  let val=10000;const gr=[{y:'2019',v:10000}];
+  YEARS.forEach(y=>{let r=0;act.forEach(e=>r+=(A[e.t]/tot)*(e.ret[y]||0));val=val*(1+r/100);gr.push({y:String(y),v:Math.round(val)});});
+  const fin=gr[gr.length-1].v, pct=((fin-10000)/10000*100).toFixed(1);
+  const cm={};act.forEach(e=>{const w=A[e.t]/tot;Object.entries(e.geo).forEach(([c,p])=>{cm[c]=(cm[c]||0)+w*p;});});
+  const countries=Object.entries(cm).map(([n,v])=>({n,v:parseFloat(v.toFixed(1))})).sort((a,b)=>b.v-a.v);
+  const usaW=['CSPX','XDEW','CNDX'].reduce((a,t)=>a+(A[t]||0),0)/tot;
+  const sl=usaW>0.7?'red':usaW>0.5?'orange':'green';
+  const smsg={red:'Oltre il 70% in azionario USA — correlazione molto elevata.',orange:'Oltre il 50% in azionario USA — correlazione alta.',green:'Buona diversificazione geografica.'};
+  const sbg={green:'#f0fdf4',orange:'#fff7ed',red:'#fef2f2'};
+  const sbd={green:'#86efac',orange:'#fed7aa',red:'#fca5a5'};
+  const sdt={green:'#16a34a',orange:'#f97316',red:'#dc2626'};
+  const maxR=Math.max(...act.map(e=>Math.max(...YEARS.map(y=>e.ret[y]||0))));
+  const bars=act.map(e=>{const avg=YEARS.reduce((a,y)=>a+(e.ret[y]||0),0)/YEARS.length;const w=Math.max(5,Math.round(avg/maxR*100));return`<div class="br"><span class="bl">${e.t} ${e.l.substring(0,14)}</span><div class="bt"><div class="bf" style="width:${w}%;background:${e.c}"><span class="bv">${avg>=0?'+':''}${avg.toFixed(1)}%/a</span></div></div></div>`;}).join('');
+  const anni=pRet.map(d=>`<div class="anno" style="background:${d.r>=0?'#f0fdf4':'#fef2f2'};border:1px solid ${d.r>=0?'#86efac':'#fca5a5'}"><div class="ay">${d.y}</div><div class="av" style="color:${d.r>=0?'#16a34a':'#dc2626'}">${d.r>=0?'+':''}${d.r.toFixed(1)}%</div></div>`).join('');
+  const etfLeg=act.map(e=>`<div class="li"><span><span class="ld" style="background:${e.c}"></span>${e.l}</span><span style="font-weight:bold">${(A[e.t]/tot*100).toFixed(1)}%</span></div>`).join('');
+  const geoLeg=countries.map((c,i)=>`<div class="li"><span><span class="ld" style="background:${CC[i%CC.length]}"></span>${c.n}</span><span style="font-weight:bold">${c.v.toFixed(1)}%</span></div>`).join('');
+
+  el.innerHTML=`
+    <div class="sem" style="background:${sbg[sl]};border:1px solid ${sbd[sl]}">
+      <div class="sem-dot" style="background:${sdt[sl]}"></div>
+      <strong>Correlazione:</strong>&nbsp;${smsg[sl]}
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-val">${avgV.toFixed(1)}%</div><div class="kpi-lbl">Volatilità media annua</div></div>
+      <div class="kpi"><div class="kpi-val">${RL[avgR]||'—'}</div><div class="kpi-lbl">Rischio complessivo</div></div>
+      <div class="kpi"><div class="kpi-val">${act.length}</div><div class="kpi-lbl">ETF nel portafoglio</div></div>
+    </div>
+    <div class="card">
+      <h3>📈 Crescita di €10.000 (2019–2025) &nbsp;<span style="color:${fin>=10000?'#16a34a':'#dc2626'}">€${fin.toLocaleString('it-IT')} · ${pct>=0?'+':''}${pct}%</span></h3>
+      <canvas id="gc" height="180" style="width:100%"></canvas>
+      <div style="font-size:.7rem;color:#aaa;margin-top:.5rem">Stime sugli indici. Non include TER né fiscalità.</div>
+    </div>
+    <div class="card"><h3>📅 Rendimento annuale</h3><div class="anni">${anni}</div></div>
+    <div class="card"><h3>📊 Rendimento medio annuo per ETF (2020–2025)</h3>${bars}</div>
+    <div class="charts-grid">
+      <div class="card"><h3>Composizione ETF</h3><canvas id="p1" width="200" height="200" style="margin:0 auto;display:block"></canvas><div class="legend">${etfLeg}</div></div>
+      <div class="card"><h3>Esposizione geografica</h3><canvas id="p2" width="200" height="200" style="margin:0 auto;display:block"></canvas><div class="legend">${geoLeg}</div></div>
+    </div>
+    <div class="footer"><strong>Note.</strong> Rendimenti 2020–2025 da justETF in EUR. Volatilità: deviazione standard campionaria sui 6 anni. Non includono TER, spread, fiscalità. Scopo esclusivamente educativo — non costituisce consulenza finanziaria (D.Lgs. 58/1998).<br><br><a href="https://www.filosofaresuimercati.eu" target="_blank" style="color:#c9a84c">filosofaresuimercati.eu</a> · Gianni &amp; Claude (Anthropic)</div>
+  `;
+  setTimeout(()=>{drawG(gr);drawP('p1',act.map(e=>({n:e.l,v:A[e.t]/tot*100,c:e.c})));drawP('p2',countries.map((c,i)=>({n:c.n,v:c.v,c:CC[i%CC.length]})));},50);
+}
+
+function drawG(data){
+  const cv=document.getElementById('gc');if(!cv)return;
+  const ctx=cv.getContext('2d');
+  cv.width=cv.offsetWidth||800;
+  const W=cv.width,H=180,pl=70,pr=20,pt=20,pb=30;
+  const vals=data.map(d=>d.v),mn=Math.min(...vals)*.97,mx=Math.max(...vals)*1.02;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#f8f7f3';ctx.fillRect(0,0,W,H);
+  const tx=i=>pl+(i/(data.length-1))*(W-pl-pr);
+  const ty=v=>pt+(1-(v-mn)/(mx-mn))*(H-pt-pb);
+  ctx.strokeStyle='#f0f0f0';ctx.lineWidth=1;
+  [.25,.5,.75,1].forEach(t=>{
+    const y=pt+t*(H-pt-pb);ctx.beginPath();ctx.moveTo(pl,y);ctx.lineTo(W-pr,y);ctx.stroke();
+    ctx.fillStyle='#999';ctx.font='10px Georgia';ctx.textAlign='right';
+    ctx.fillText('€'+Math.round(mn+(1-t)*(mx-mn)).toLocaleString('it-IT'),pl-5,y+4);
+  });
+  ctx.fillStyle='#999';ctx.font='10px Georgia';ctx.textAlign='center';
+  data.forEach((d,i)=>ctx.fillText(d.y,tx(i),H-6));
+  ctx.beginPath();ctx.moveTo(tx(0),ty(data[0].v));
+  data.forEach((d,i)=>ctx.lineTo(tx(i),ty(d.v)));
+  ctx.lineTo(tx(data.length-1),H-pb);ctx.lineTo(tx(0),H-pb);ctx.closePath();
+  ctx.fillStyle='rgba(201,168,76,.15)';ctx.fill();
+  ctx.beginPath();ctx.moveTo(tx(0),ty(data[0].v));
+  data.forEach((d,i)=>ctx.lineTo(tx(i),ty(d.v)));
+  ctx.strokeStyle='#c9a84c';ctx.lineWidth=2.5;ctx.stroke();
+  data.forEach((d,i)=>{ctx.beginPath();ctx.arc(tx(i),ty(d.v),4,0,Math.PI*2);ctx.fillStyle='#c9a84c';ctx.fill();});
+}
+
+function drawP(id,data){
+  const cv=document.getElementById(id);if(!cv)return;
+  const ctx=cv.getContext('2d'),cx=100,cy=100,r=80,inn=40;
+  ctx.clearRect(0,0,200,200);
+  let s=-Math.PI/2,tot=data.reduce((a,d)=>a+d.v,0);
+  data.forEach(d=>{const sl=(d.v/tot)*Math.PI*2;ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,s,s+sl);ctx.closePath();ctx.fillStyle=d.c;ctx.fill();s+=sl;});
+  ctx.beginPath();ctx.arc(cx,cy,inn,0,Math.PI*2);ctx.fillStyle='white';ctx.fill();
+}
+
+buildList();
 </script>
+</body>
+</html>
